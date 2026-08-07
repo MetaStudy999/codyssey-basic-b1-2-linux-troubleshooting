@@ -1,0 +1,34 @@
+B1-2 CPU BEFORE — ACTUAL RUNTIME EVIDENCE
+GitHub Actions focused run: 31217119811
+Artifact: b1-2-cpu-probe / 9008964542
+Artifact digest: sha256:88bc09d8f8ae9e5c1ff50683ac2930457f4397b269db0c41b8d7b67273fbbd69
+Runner: Ubuntu 24.04, user=runner uid=1001
+Configuration: MEMORY_LIMIT=512, CPU_MAX_OCCUPY=10, MULTI_THREAD_ENABLE=false, AGENT_PORT=15034
+Started: 2026-08-07T20:44:03Z
+Ended: 2026-08-07T20:44:48Z
+Launcher PID: 2260
+Listener PID: 2272
+Elapsed: 45 seconds
+Termination: bounded test harness timeout; harness sent TERM, launcher exit code 143
+
+[application CPU telemetry]
+2026-08-07 20:44:06,885 [INFO] [CpuWorker] Started. Maximum CPU Limit: 10%
+2026-08-07 20:44:06,886 [INFO] [CpuWorker] Current Load: 5.00%
+2026-08-07 20:44:13,114 [INFO] [CpuWorker] Current Load: 8.64%
+2026-08-07 20:44:15,225 [INFO] [CpuWorker] Peak reached (10.00%). Starting cooldown...
+2026-08-07 20:44:16,230 [INFO] [CpuWorker] Current Load: 10.00%
+2026-08-07 20:44:18,334 [INFO] [CpuWorker] Cooldown complete (5.00%). Resuming load increase...
+2026-08-07 20:44:21,451 [INFO] [CpuWorker] Peak reached (10.00%). Starting cooldown...
+2026-08-07 20:44:27,674 [INFO] [CpuWorker] Cooldown complete (5.00%). Resuming load increase...
+2026-08-07 20:44:37,022 [INFO] [CpuWorker] Peak reached (10.00%). Starting cooldown...
+2026-08-07 20:44:46,363 [INFO] [CpuWorker] Cooldown complete (5.00%). Resuming load increase...
+
+[OS process-family observation excerpts]
+Initial samples distinguished the supplied launcher and the actual tcp/15034 listener:
+PID 2260 launcher: %CPU 20.0 at startup sample
+PID 2272 listener: %CPU 15.3 at startup sample
+Later lifetime-average ps values dropped while the app continued its controlled 5~10% load/cooldown cycle. The process did not emit a CPU protection violation in the 45-second observation window.
+
+Important interpretation:
+- Exit code 143 for this BEFORE run was caused by the bounded test harness cleanup, not by the application CPU protection policy.
+- No literal `WATCHDOG` or `SIGTERM` application log was emitted by this supplied build. Do not invent those strings as actual evidence.
