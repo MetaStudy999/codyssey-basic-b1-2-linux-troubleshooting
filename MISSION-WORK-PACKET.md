@@ -1,6 +1,6 @@
 # B1-2 Mission Work Packet — Linux Troubleshooting
 
-> This file is the execution contract for the B1-2 Workcell. The Control Tower is READ ONLY. All writes are limited to this repository.
+> B1-2 Workcell execution contract. Control Tower is READ ONLY. All writes are limited to this Mission repository.
 
 ## 1. Identity
 
@@ -13,15 +13,14 @@
 
 ## 2. Control Tower Baseline
 
-- Control Tower Repository: `MetaStudy999/codyssey-basic`
+- Control Tower: `MetaStudy999/codyssey-basic`
 - Current launcher main SHA checked: `f6192ad701bd1d2c317f908d210e7049f6b32310`
 - Active Wave: `20260808-01`
 - Frozen Baseline SHA: `0d1581b3e82366988f57e1d76da311c028b8e15e`
 - Starter Packet: `docs/00-governance/work-packets/b1-2.md`
 - Workcell Prompt: `docs/00-governance/workcell-prompts/b1-2.md`
-- Baseline Rule: this Workcell does not change the frozen baseline.
 
-### Required Control Tower Context read from the frozen baseline
+Frozen baseline context read:
 
 - `AGENTS.md`
 - `docs/00-governance/multi-agent-mission-engineering.md`
@@ -31,17 +30,16 @@
 - `docs/00-governance/work-packets/b1-2.md`
 - `docs/02-domains/01-linux-os/b1-2-linux-troubleshooting.md`
 
-### Baseline consistency result
-
-Active Wave, Workcell prompt, Starter Packet and frozen `config/missions.yaml` all point to the same B1-2 repository and mission identity. `CONTROL_TOWER_DRIFT = NONE`.
+Result: Active Wave, Workcell prompt, Starter Packet and frozen `config/missions.yaml` agree on B1-2 identity/repository/baseline. `CONTROL_TOWER_DRIFT = NONE`.
 
 ## 3. Read / Write Boundary
 
 ### READ
 
-- Frozen Control Tower baseline
-- Current B1-2 repository
+- frozen Control Tower baseline
+- current B1-2 repository
 - B1-2 official Mission source and directly related official metadata
+- B1-1 repository read-only only when evaluating reuse of its monitor design
 
 ### WRITE
 
@@ -52,327 +50,347 @@ Active Wave, Workcell prompt, Starter Packet and frozen `config/missions.yaml` a
 - `MetaStudy999/codyssey-basic`
 - any other Mission repository
 
+Boundary review result: `PASS`.
+
 ## 4. G1 Source Inventory
 
-| Source Candidate | Type | State | Location | Notes |
-|---|---|---|---|---|
-| Mission original | PDF | `VALID` | `b1-2-mission.pdf` | 9 pages. Local supplied PDF Git blob SHA exactly matches repository blob `2930ee6980094f739e5f7cf95108f55ea561714b`. Authoritative mission source. |
-| Mission converted copy | Markdown | `CONFLICT` | `b1-2-mission.md` | Substantive content exists, but the prerequisites table is misaligned during PDF→Markdown conversion (for example AGENT_HOME/AGENT_PORT/UPLOAD/KEY/LOG/MEMORY rows). Use PDF on conflict. |
-| Evaluation candidate | Markdown | `UNVERIFIED` | `b1-2-evaluation.md` | Non-empty 20-item rubric, but no direct official evaluation artifact/provenance was found that proves this Markdown is the official evaluation source. Use as provisional review criteria only. |
-| Official evaluation PDF/TXT | PDF/TXT | `MISSING` | repository / provided File Library search | No official evaluation PDF/TXT found. |
-| Official LMS mission metadata snapshot | TXT/JSON-like | `PARTIAL` | File Library: historical LMS payload | Confirms mission identity, `evlYn=Y`, `pjtEvlGuideFileSn=4`, and provided data file `agent-app-leak.zip`; the visible `evlGuideCn` is null and no official evaluation content is recoverable from the snapshot. |
-| Provided runtime artifact metadata | ZIP metadata | `VALID` metadata / artifact `UNREADABLE` in current tools | LMS metadata: `agent-app-leak.zip`, x86 + arm64 | Download URL is present in the official metadata snapshot, but the actual ZIP is not present in this repository/File Library and could not be fetched by the current runtime. |
-| `monitor.sh` | runtime tool | `MISSING` in this repo | repository tree | Mission requires using `monitor.sh`; B1-1 reuse is operationally recommended, not an explicit official prerequisite. |
-| Reconstructed/decompiled Python candidates | Python | `HISTORICAL` / `EXCLUDED` | File Library | Not used. Mission explicitly prohibits binary decompilation/reverse engineering; these files are outside the official source path. |
+| Source Candidate | State | Location | Decision |
+|---|---|---|---|
+| Mission original PDF | `VALID` | `b1-2-mission.pdf` | Authoritative. 9 pages. Supplied local PDF Git blob SHA matches repository blob `2930ee6980094f739e5f7cf95108f55ea561714b`. |
+| Mission Markdown | `CONFLICT` | `b1-2-mission.md` | Substantive copy, but prerequisite table is misaligned by PDF→MD conversion. PDF wins on conflict. |
+| Evaluation Markdown | `UNVERIFIED` | `b1-2-evaluation.md` | Non-empty 20-item rubric; official provenance not proved. Provisional review criteria only. |
+| Official Evaluation PDF/TXT | `MISSING` | repo/File Library discovery | Not recovered. |
+| Official LMS mission metadata snapshot | `PARTIAL` | File Library | Confirms mission identity, evaluation enabled flag/slot and `agent-app-leak.zip`; visible evaluation content is null. |
+| Official runtime artifact metadata | metadata `VALID`; actual ZIP inaccessible in AI runtime | LMS snapshot | `agent-app-leak.zip`, with x86 and arm64 executables. Human Runtime must supply/access actual ZIP. |
+| B1-1 `monitor.sh` | `VALID` as read-only related implementation | B1-1 repo | Reviewed for reuse; system-wide B1-1 metrics are insufficient for B1-2 process-specific evidence, so a minimal B1-2 process monitor was added. |
+| Reconstructed/decompiled Python candidates | `HISTORICAL / EXCLUDED` | File Library | Not used. Mission prohibits decompilation/reverse engineering. |
 
-### Source conflict record
+### Source conflict resolution
 
-`b1-2-mission.pdf` page 3-4 contains the authoritative prerequisites table. The Markdown conversion shifts values to the wrong row. Examples from the PDF:
+Mission PDF page 3-4 is authoritative for prerequisites:
 
-- `AGENT_HOME`: required environment variable
-- `AGENT_PORT`: `15034` fixed
-- `AGENT_UPLOAD_DIR`: `$AGENT_HOME/upload_files` directory must exist
-- `AGENT_KEY_PATH`: `$AGENT_HOME/api_keys` path must exist
-- `AGENT_LOG_DIR`: log directory exists and writable
-- `MEMORY_LIMIT`: integer `50~512` MB
-- `CPU_MAX_OCCUPY`: integer `10~100` percent
-- `MULTI_THREAD_ENABLE`: `true/false` (`1/0`, `yes/no` accepted)
-- `$AGENT_HOME/api_keys/secret.key`: content `agent_api_key_test`
-- network: bindable on `0.0.0.0:15034`
+- non-root execution
+- `AGENT_HOME` required
+- `AGENT_PORT=15034`
+- `AGENT_UPLOAD_DIR=$AGENT_HOME/upload_files`, directory exists
+- `AGENT_KEY_PATH=$AGENT_HOME/api_keys`, path exists
+- writable `AGENT_LOG_DIR`
+- `MEMORY_LIMIT`: integer 50-512 MB
+- `CPU_MAX_OCCUPY`: integer 10-100 %
+- `MULTI_THREAD_ENABLE`: true/false family (`1/0`, `yes/no` accepted)
+- `$AGENT_HOME/api_keys/secret.key`: `agent_api_key_test`
+- bindable on `0.0.0.0:15034`
 
-Resolution: Source-of-Truth priority applies: Mission PDF > Mission Markdown. The Markdown discrepancy does not change the official requirements.
+The Markdown conversion shifts values into wrong rows. Source-of-Truth order resolves this: Mission PDF > Mission Markdown.
 
-### Source Mode / Confidence / Gaps
+### G1 decision
 
 - Source Mode: `MISSION-LED`
-- Source Confidence: `HIGH` for the Mission; `LOW/UNVERIFIED` for Evaluation provenance
-- Source Gaps:
-  - official Evaluation content is not directly accessible/verified
-  - provided `agent-app-leak.zip` is not currently present in this repository and could not be fetched by the current tool runtime
-  - `monitor.sh` is not present in this repository
-- G1 decision: `PASS` — Mission is authoritative and complete enough to define the required work; Evaluation uncertainty is explicitly retained as a gap and is not promoted to official requirements.
+- Mission Confidence: `HIGH`
+- Evaluation Confidence: `LOW / UNVERIFIED`
+- Source gaps:
+  - official Evaluation content/provenance is not directly verified
+  - actual `agent-app-leak.zip` is not available to the current AI runtime
+- G1 SOURCE: `PASS`
+
+The Mission is complete enough to define mandatory work. Evaluation uncertainty remains an explicit gap and is not converted into invented requirements.
 
 ## 5. Mission Contract
 
 ### Goal
 
-Reproduce/observe and diagnose three Linux/OS failure modes using process/resource telemetry and application logs, then produce evidence-based GitHub Issue-style technical reports:
+Use process/resource telemetry and application logs to reproduce/observe and diagnose three failure modes, then write evidence-based GitHub Issue-style reports:
 
 1. OOM / memory leak crash
-2. CPU spike / watchdog termination
-3. deadlock / alive-but-stalled process
+2. CPU spike / Watchdog termination
+3. Deadlock / alive-but-stalled process
 
-Analysis order: `symptom -> observation -> evidence -> root-cause reasoning -> workaround -> Before/After verification`.
+Required reasoning order:
 
-### Required Deliverables
+`symptom -> observation -> objective evidence -> root-cause reasoning -> workaround -> Before/After verification`.
 
-- [ ] OOM report 1
-- [ ] CPU report 1
-- [ ] Deadlock report 1
-- [ ] each report includes actual evidence and Before/After verification
-- [ ] final submission can be a PDF or GitHub Repository link as stated by the Mission
+### Required deliverables
 
-### Required Report Structure
+- [ ] final OOM report with actual evidence
+- [ ] final CPU report with actual evidence
+- [ ] final Deadlock report with actual evidence
+- [ ] each report includes Description, Evidence & Logs, Root Cause Analysis, Workaround & Verification and Before & After
+- [ ] final submission via PDF or GitHub Repository link as allowed by Mission
 
-Each of the three reports must contain:
+### Case evidence minimum
 
-1. Description / observed symptom
-2. Evidence & Logs / reproduction path and objective evidence
-3. Root Cause Analysis / evidence-based technical explanation + related OS principle
-4. Workaround & Verification / environment-variable adjustment + result
-5. Before & After comparison
+**OOM**
 
-### Runtime prerequisites from the Mission PDF
+- `monitor.sh` memory rise over time
+- termination-adjacent MemoryGuard/memory-limit/self-termination log
+- `MEMORY_LIMIT` change with at least two runs
 
-- non-root execution
-- `AGENT_HOME` set
-- `AGENT_PORT=15034`
-- `AGENT_UPLOAD_DIR=$AGENT_HOME/upload_files`, directory exists
-- `AGENT_KEY_PATH=$AGENT_HOME/api_keys`, path exists
-- writable `AGENT_LOG_DIR`
-- `MEMORY_LIMIT` integer 50-512 MB
-- `CPU_MAX_OCCUPY` integer 10-100 percent
-- `MULTI_THREAD_ENABLE` true/false family
-- `$AGENT_HOME/api_keys/secret.key` with one line `agent_api_key_test`
-- bind `0.0.0.0:15034`
+**CPU**
+
+- target-process CPU spike via `top`/`ps`/monitoring
+- Watchdog/termination log
+- `CPU_MAX_OCCUPY` Before/After
+
+**Deadlock**
+
+- PID remains alive
+- CPU/MEM progress stalls
+- `top -H` or `ps -L` thread evidence
+- last WAITING/BLOCKED or equivalent wait evidence
+- thread/lock circular-wait reasoning
+- `MULTI_THREAD_ENABLE` Before/After
 
 ### Constraints
 
-- Linux environment capable of running the provided Python-based binary
-- local or isolated environment is recommended
-- take care with firewall settings on shared networks
-- binary decompilation/reverse engineering is prohibited
-- standard Linux tooling such as `monitor.sh`, `ps`, `top`, `htop`, `pstree`, `kill` is allowed
-- actual observed evidence must be separated from examples in the Mission PDF
+- Linux capable of running the provided Python-based binary
+- non-root execution
+- local/isolated environment recommended
+- firewall awareness because port `15034` binds on `0.0.0.0`
+- no binary decompilation/reverse engineering
+- standard Linux observation tools are allowed
+- Mission example output is never actual evidence
 
-### Explicit Non-scope / Backlog
+### Explicit non-scope
 
-- optional scheduling-algorithm inference (Round-Robin/FCFS/Priority) is `BONUS/BACKLOG`
-- enterprise observability stack, container orchestration, permanent production hardening are not required for mission completion
-- reverse engineering or rebuilding the supplied binary is prohibited and excluded
+- optional scheduling-algorithm inference is `BONUS/BACKLOG`
+- enterprise observability stacks, Kubernetes, permanent production hardening are not required
+- binary reconstruction/decompilation is prohibited
 
 ## 6. Requirement Traceability
 
-| ID | Requirement | Source | Location | Confidence | Implementation | Test | Evidence | Status |
-|---|---|---|---|---|---|---|---|---|
-| REQ-B1-2-001 | Produce 3 issue-style reports: OOM, CPU, Deadlock | Mission PDF | p.1-2 | HIGH | `reports/` | structure validator/manual | 3 report files | TODO |
-| REQ-B1-2-002 | Each report includes symptom, evidence, root cause, workaround, Before/After | Mission PDF | p.2 | HIGH | report template | validator | report sections | TODO |
-| REQ-B1-2-003 | OOM: monitor memory usage rising over time | Mission PDF | p.2, p.4 | HIGH | runtime procedure | runtime | monitor values | NEEDS-RUNTIME |
-| REQ-B1-2-004 | OOM: identify MemoryGuard termination log such as limit exceeded/self-terminated | Mission PDF | p.2, p.4 | HIGH | runtime procedure | runtime/log inspection | raw log excerpt | NEEDS-RUNTIME |
-| REQ-B1-2-005 | OOM: `MEMORY_LIMIT` Before/After, minimum two runs | Mission PDF | p.2, p.4 | HIGH | runtime procedure | two runs | comparison table/logs | NEEDS-RUNTIME |
-| REQ-B1-2-006 | CPU: capture process-specific CPU spike using top/ps/monitoring | Mission PDF | p.2, p.4 | HIGH | runtime procedure | runtime | CPU capture | NEEDS-RUNTIME |
-| REQ-B1-2-007 | CPU: identify Watchdog/system protection termination evidence | Mission PDF | p.2, p.4 | HIGH | runtime procedure | runtime/log inspection | raw log excerpt | NEEDS-RUNTIME |
-| REQ-B1-2-008 | CPU: `CPU_MAX_OCCUPY` Before/After comparison | Mission PDF | p.2, p.4 | HIGH | runtime procedure | two configurations | comparison | NEEDS-RUNTIME |
-| REQ-B1-2-009 | Deadlock: show PID remains alive | Mission PDF | p.3-4 | HIGH | runtime procedure | `ps`/`pgrep` | PID evidence | NEEDS-RUNTIME |
-| REQ-B1-2-010 | Deadlock: show CPU/MEM stagnation and thread state | Mission PDF | p.3-4 | HIGH | runtime procedure | `top -H` or `ps -L` | capture/log | NEEDS-RUNTIME |
-| REQ-B1-2-011 | Deadlock: last WAITING/BLOCKED point + thread/lock wait reasoning | Mission PDF | p.3-4 | HIGH | report reasoning | log inspection | raw last log + reasoning | NEEDS-RUNTIME |
-| REQ-B1-2-012 | Deadlock: `MULTI_THREAD_ENABLE` reproduce/avoid Before/After | Mission PDF | p.4 | HIGH | runtime procedure | two configurations | comparison | NEEDS-RUNTIME |
-| REQ-B1-2-013 | Satisfy non-root/env/key/port runtime prerequisites | Mission PDF | p.3-4 | HIGH | runtime setup | preflight | command outputs | NEEDS-RUNTIME |
-| REQ-B1-2-014 | Do not decompile/reverse engineer supplied binary | Mission PDF | p.6 | HIGH | policy | review | no prohibited artifacts committed | TODO |
-| REQ-B1-2-015 | Use Linux standard observation tools | Mission PDF | p.6 | HIGH | runtime guide | manual | command outputs | NEEDS-RUNTIME |
-| REQ-B1-2-016 | Explain memory leak, CPU overuse, deadlock and evidence-based incident communication | Mission PDF | p.3 | HIGH | learning notes | oral/self-check | learning checklist | TODO |
+| ID | Requirement | Implementation / Validation | Evidence | Status |
+|---|---|---|---|---|
+| REQ-B1-2-001 | 3 issue-style reports | `reports/oom.md`, `cpu.md`, `deadlock.md`; static validator | final filled reports | `IMPLEMENTED` |
+| REQ-B1-2-002 | required report sections + Before/After | report templates + validator | final filled reports | `TESTED` structure / runtime pending |
+| REQ-B1-2-003 | OOM memory rises over time | runtime guide + process monitor | `evidence/oom/` | `NEEDS-RUNTIME` |
+| REQ-B1-2-004 | OOM termination/MemoryGuard log | runtime guide | raw app log | `NEEDS-RUNTIME` |
+| REQ-B1-2-005 | `MEMORY_LIMIT` min 2-run comparison | OOM template/runbook | before/after logs/table | `NEEDS-RUNTIME` |
+| REQ-B1-2-006 | target-process CPU spike | process monitor + `top/ps` guide | `evidence/cpu/` | `NEEDS-RUNTIME` |
+| REQ-B1-2-007 | Watchdog/system-protection termination evidence | runtime guide | raw app log | `NEEDS-RUNTIME` |
+| REQ-B1-2-008 | `CPU_MAX_OCCUPY` Before/After | CPU template/runbook | comparison | `NEEDS-RUNTIME` |
+| REQ-B1-2-009 | Deadlock PID alive | runtime guide | `ps/pgrep` | `NEEDS-RUNTIME` |
+| REQ-B1-2-010 | Deadlock CPU/MEM stall + thread state | runtime guide | `top -H`/`ps -L` | `NEEDS-RUNTIME` |
+| REQ-B1-2-011 | last wait log + lock-wait reasoning | deadlock report template | app/thread evidence | `NEEDS-RUNTIME` |
+| REQ-B1-2-012 | `MULTI_THREAD_ENABLE` Before/After | deadlock runbook | comparison | `NEEDS-RUNTIME` |
+| REQ-B1-2-013 | runtime prerequisites | preflight procedure | preflight output | `NEEDS-RUNTIME` |
+| REQ-B1-2-014 | no decompilation/reverse engineering | AGENTS, gitignore, self review | repo inventory | `PASS` |
+| REQ-B1-2-015 | use standard Linux observation tools | monitor/runbook | actual commands | `IMPLEMENTED`; actual use pending |
+| REQ-B1-2-016 | explain OOM/CPU/Deadlock and evidence communication | `docs/LEARNING-GUIDE.md` | learner explanation | `IMPLEMENTED`; G7 pending |
+
+No runtime row is marked PASS without actual supplied-app execution.
 
 ## 7. Evaluation Mapping
 
-The repository contains `b1-2-evaluation.md`, but its official provenance is not verified. The criteria below are therefore **provisional review criteria**, not promoted to official requirements.
+`b1-2-evaluation.md` remains `UNVERIFIED` as an official source. It is used only to catch omissions already compatible with the Mission.
 
-| Evaluation ID | Provisional Criterion | Related Requirement | Validation | Evidence | Status |
-|---|---|---|---|---|---|
-| EVA-01 | OOM growth then termination | 003-005 | runtime/log review | OOM evidence | UNVERIFIED |
-| EVA-02 | OOM `MEMORY_LIMIT` Before/After | 005 | two runs | comparison | UNVERIFIED |
-| EVA-03 | CPU threshold/termination pattern | 006-008 | runtime/log review | CPU evidence | UNVERIFIED |
-| EVA-04 | CPU `CPU_MAX_OCCUPY` Before/After | 008 | two runs | comparison | UNVERIFIED |
-| EVA-05 | Deadlock PID alive + CPU/MEM/log stall | 009-011 | runtime | deadlock evidence | UNVERIFIED |
-| EVA-06 | Deadlock `MULTI_THREAD_ENABLE` Before/After | 012 | two configs | comparison | UNVERIFIED |
-| EVA-07 | all 3 reports use issue structure | 001-002 | static/manual | report files | UNVERIFIED |
-| EVA-08 | PID/timestamp/key log evidence present | 002-012 | validator/manual | raw evidence | UNVERIFIED |
-| EVA-09~11 | explain monitor/CPU/deadlock diagnostic tool sequence | 003,006,009-011 | learning review | learning notes | UNVERIFIED |
-| EVA-12~15 | explain OS mechanisms and circular wait reasoning | 003-012,016 | learning review | learning notes | UNVERIFIED |
-| EVA-16~20 | propose monitoring/root fixes/triage/process improvements | 016 | learning review | learning notes/backlog | UNVERIFIED |
+| Provisional group | Criteria | Mission alignment | Status |
+|---|---|---|---|
+| EVA-01~08 | OOM/CPU/Deadlock evidence + report structure + PID/timestamp traceability | direct/compatible | `UNVERIFIED`, covered by templates/runtime plan |
+| EVA-09~11 | diagnostic tool sequence explanations | compatible learning expectation | `UNVERIFIED`, learning guide prepared |
+| EVA-12~15 | OS mechanism/circular-wait explanations | compatible with Mission goals | `UNVERIFIED`, learning guide prepared |
+| EVA-16~20 | operational/root-fix improvements | useful but provenance unverified | `UNVERIFIED`; do not block official Mission unless verified |
 
-## 8. Repository Baseline
+## 8. Repository Baseline / Current Inventory
 
-- Default Branch: `main`
-- Baseline Commit: `b3f22eed3e14bda831f5afd2c745c8a8c53d906d`
-- Work Branch: `mission/B1-2`
-- Runtime / Language: Linux; supplied Python-based executable/binary
-- Dependency Manager: none required by official Mission
-- Existing Tests: `NO`
+- Default branch: `main`
+- Baseline commit: `b3f22eed3e14bda831f5afd2c745c8a8c53d906d`
+- Work branch: `mission/B1-2`
+- Runtime: Linux + supplied executable
+- Dependency manager: none required by official Mission
 
-### Repository Inventory at G1
+G1 baseline inventory:
 
 ```text
-.
-├── README.md
-├── b1-2-evaluation.md
-├── b1-2-mission.md
-└── b1-2-mission.pdf
+README.md
+b1-2-evaluation.md
+b1-2-mission.md
+b1-2-mission.pdf
 ```
 
-### Existing Implementation
+G2 additions:
 
-- already present: Mission PDF, converted Mission Markdown, evaluation candidate, minimal README
-- partial: source documentation only
-- missing: `MISSION-WORK-PACKET.md`, report set, runtime/evidence layout, automated report validation, learning notes, handoff files
-- runtime artifact missing from repo: `agent-app-leak.zip`
-- `monitor.sh` missing from repo
+```text
+.gitignore
+AGENTS.md
+MISSION-WORK-PACKET.md
+docs/
+  LEARNING-GUIDE.md
+  RUNTIME-GUIDE.md
+  SELF-REVIEW.md
+evidence/
+  README.md
+reports/
+  oom.md
+  cpu.md
+  deadlock.md
+scripts/
+  monitor.sh
+  validate_reports.py
+```
 
 ## 9. Mission-specific TOC
 
 ```text
-B1-2
-├── 00 Source & Contract
-├── 01 Runtime prerequisites
-├── 02 Observability baseline
-├── 03 OOM / Memory Leak
-│   ├── Reproduce
-│   ├── Monitor evidence
-│   ├── Termination log
-│   ├── Root cause
-│   └── MEMORY_LIMIT Before/After
-├── 04 CPU Spike / Watchdog
-│   ├── Reproduce
-│   ├── Process CPU evidence
-│   ├── Watchdog log
-│   └── CPU_MAX_OCCUPY Before/After
-├── 05 Deadlock
-│   ├── PID alive
-│   ├── CPU/MEM/thread stall
-│   ├── last WAITING/BLOCKED log
-│   ├── circular wait reasoning
-│   └── MULTI_THREAD_ENABLE Before/After
-├── 06 Reports
-├── 07 Runtime Evidence
-├── 08 Learning Notes
-└── 09 Handoff
+00 Source & Contract
+01 Runtime prerequisites / preflight
+02 Process observability baseline
+03 OOM: reproduce -> memory evidence -> termination log -> RCA -> MEMORY_LIMIT Before/After
+04 CPU: reproduce -> target PID CPU -> Watchdog log -> RCA -> CPU_MAX_OCCUPY Before/After
+05 Deadlock: PID alive -> resource/thread stall -> last wait log -> circular wait -> MULTI_THREAD_ENABLE Before/After
+06 Final reports
+07 Actual runtime evidence
+08 Learning explanation
+09 Handoff / mission-result
 ```
 
-## 10. Scope / Engineering Plan
+## 10. Engineering Plan / Current Build
 
 ### Prompt Engineering
 
 - ROLE: B1-2 Orchestrator/Integrator
-- GOAL: finish the Mission with evidence-based three-case reports without inventing runtime results
-- SCOPE: this B1-2 repository only
-- OUTPUT CONTRACT: source traceability, minimal support artifacts, tests, actual evidence, learning notes, handoff
-- STOP CONDITION: mandatory Mission requirements met + required runtime/evidence completed + BLOCKER 0/MAJOR 0
+- GOAL: finish the three evidence-based incident cases without fabricating runtime
+- SCOPE: B1-2 repo only
+- OUTPUT: traceable requirements, minimal monitoring/support artifacts, actual evidence, final reports, learning, handoff
+- STOP: mandatory Mission + test + runtime + evidence + BLOCKER/MAJOR zero
 
 ### Context Engineering
 
-Only B1-2 Mission/Evaluation candidate, current repository state, related frozen governance and current Gate context are used.
+Only B1-2 Source, frozen governance, current repository state and directly related B1-1 monitor implementation were used.
 
 ### Harness Engineering
 
 - Git boundary: `mission/B1-2`
-- Test commands: static report/source validation to be added in G2/G3
-- Secret boundary: no API keys/tokens; the Mission's fixed test string is not treated as a secret credential but should only be used as the required fixture
-- Evidence boundary: Mission PDF examples are never recorded as actual evidence
-- Runtime boundary: no runtime PASS without the supplied app and actual Linux observation
+- Static commands:
+  - `bash -n scripts/monitor.sh`
+  - `python3 -m py_compile scripts/validate_reports.py`
+  - `python3 scripts/validate_reports.py`
+- Runtime commands: defined in `docs/RUNTIME-GUIDE.md`
+- Secret boundary: no real credential/token; runtime binary is gitignored
+- Evidence boundary: actual vs Mission example strictly separated
+
+### B1-1 monitor reuse decision
+
+B1-1's existing `monitor.sh` was inspected read-only. It is a B1-1 health-check script and records system-wide CPU/MEM. B1-2 needs target-process CPU/MEM/RSS/thread-state evidence. A minimal mission-local `scripts/monitor.sh` therefore reuses the standard Linux observation approach but collects process-level values required by B1-2.
 
 ### Loop Engineering
 
-- Self review: 1
-- Independent review: 1 by default when useful/available
-- Revalidation: only findings that affect BLOCKER/MAJOR or requirements
-
-### Fusion Engineering
-
-`Mission PDF -> verified evaluation if recovered -> tests -> runtime -> evidence`.
+- Self review: `1 completed`
+- Independent review: optional/conditional; not available as a separate agent in current tool runtime
+- Revalidation: only BLOCKER/MAJOR findings
 
 ## 11. Agent Routing
 
 - Orchestrator / Integrator: `ChatGPT`
-- Primary Builder: `ChatGPT` for minimal repository preparation; external builder optional
-- Independent Reviewer: optional/default one pass after G3
-- Claude: `OFF / CONDITIONAL`
-- Gemini: `OFF / CONDITIONAL` (PDF already readable and visually verified)
-- Grok: `OFF / CONDITIONAL`
+- Primary Builder: `ChatGPT` for minimal support artifacts
+- Independent Reviewer: `CONDITIONAL / unavailable as separate current runtime agent`
+- Claude/Gemini/Grok: `OFF / CONDITIONAL`
 - Runtime Authority: `Human`
+
+No external agent is allowed to fabricate or substitute Human Runtime.
 
 ## 12. Dependency / Drift Check
 
-- Upstream Dependency: `RECOMMENDED`, not official mandatory dependency
-- Related Mission: `B1-1` for `monitor.sh` / observability environment knowledge
+- Upstream B1-1 dependency: `RECOMMENDED`, not an explicit official prerequisite
+- Related Mission: `B1-1`
 - Control Tower Drift: `NONE`
-- Source Drift: `FOUND` only in the converted Markdown prerequisites table; resolved by PDF precedence
-- Action: `CONTINUE`
+- Source Drift: PDF↔Markdown prerequisite table conversion conflict, `RESOLVED BY PDF PRECEDENCE`
+- Action: `CONTINUE TO HUMAN RUNTIME`
 
-The B1-2 Mission requires use of `monitor.sh` but does not explicitly state that B1-1 must be completed first. Therefore B1-1 is not promoted to a formal prerequisite. A compatible monitor tool must nevertheless exist at runtime.
+B1-2 requires `monitor.sh` use but does not state that B1-1 must be formally completed first.
 
-## 13. Test Plan
+## 13. Test Plan / Actual Results
 
-| Test | Requirement | Command / Method | Expected | Actual | Status |
-|---|---|---|---|---|---|
-| Source consistency | G1 | compare PDF prerequisite table against MD | conflicts documented, PDF authoritative | documented | PASS |
-| Report structure | 001-002 | static validator | 3 reports, required headings | pending G2 | TODO |
-| No fabricated evidence | all runtime reqs | scan report placeholders/status | no example marked actual | pending G2 | TODO |
-| OOM runtime | 003-005 | actual app + monitor/logs + two configs | growth/termination + comparison | not run | NEEDS-RUNTIME |
-| CPU runtime | 006-008 | actual app + process tools + two configs | spike/watchdog + comparison | not run | NEEDS-RUNTIME |
-| Deadlock runtime | 009-012 | actual app + PID/thread/log inspection + two configs | stall + wait evidence + comparison | not run | NEEDS-RUNTIME |
-| Runtime prereq | 013 | preflight commands | all required conditions pass | not run | NEEDS-RUNTIME |
-| Prohibited artifact check | 014 | repository inventory/review | no reverse-engineered binary/source committed | current baseline clean | TESTED |
+| Test | Scope | Actual Result | Status |
+|---|---|---|---|
+| PDF↔MD source comparison | G1 | prerequisite-table conflict found and recorded; PDF selected | `PASS` |
+| `bash -n scripts/monitor.sh` | shell syntax | no syntax error | `PASS` |
+| `python3 -m py_compile scripts/validate_reports.py` | Python syntax | compiled successfully in local mirror | `PASS` |
+| report contract validator | 3 report structures | OOM/CPU/Deadlock all PASS in local contract execution | `PASS` |
+| monitor positive fixture | process collection | exact `agent-leak-app` fixture PID, CPU/MEM/RSS/thread/state collected | `PASS` |
+| monitor missing process | failure behavior | `PROCESS_STATE:missing`, exit code 1 | `PASS` |
+| monitor false-positive regression | evidence reliability | initial ancestor `pgrep -f` false match found; fixed with exact-name preference + ancestor exclusion; retest PASS | `PASS` |
+| prohibited artifact review | reverse engineering constraint | no decompiled/reconstructed runtime artifact committed/used | `PASS` |
+| official supplied app | real Mission behavior | not available to current AI shell | `NEEDS-RUNTIME` |
+
+Environment note: direct `git clone` from the private analysis shell could not resolve `github.com`; exact branch file contents were read/written through the GitHub connector and the executable script/contract logic was tested in a local mirror. This does not affect or substitute the future supplied-app runtime test.
 
 ## 14. Runtime Plan
 
-| Runtime Check | AI possible now | Human needed | Evidence | Status |
-|---|---|---|---|---|
-| obtain official `agent-app-leak.zip` | no, current tool fetch unavailable | yes or user upload | file + `file` output | NEEDS-RUNTIME |
-| choose x86/arm64 executable | no without ZIP | yes | `uname -m`, `file` | NEEDS-RUNTIME |
-| configure prerequisites | partially documentable | yes | env/path/key/port outputs | NEEDS-RUNTIME |
-| OOM two-run observation | no | yes | monitor/logs/timestamps | NEEDS-RUNTIME |
-| CPU two-run observation | no | yes | top/ps/logs/timestamps | NEEDS-RUNTIME |
-| Deadlock two-config observation | no | yes | PID/thread/log evidence | NEEDS-RUNTIME |
+| Runtime Check | Human Needed | Evidence | Status |
+|---|---|---|---|
+| obtain official `agent-app-leak.zip` | yes | official file + `uname -m`/`file` | `NEEDS-RUNTIME` |
+| non-root/env/path/key/port preflight | yes | `evidence/runtime/preflight/` | `NEEDS-RUNTIME` |
+| OOM run 1/run 2 | yes | `evidence/oom/` | `NEEDS-RUNTIME` |
+| CPU run 1/run 2 | yes | `evidence/cpu/` | `NEEDS-RUNTIME` |
+| Deadlock true/false comparison | yes | `evidence/deadlock/` | `NEEDS-RUNTIME` |
 
-Human Runtime must be requested as a short sequence, not as a large unstructured command dump.
+Human Runtime must be requested in small ordered steps: goal -> reason -> command -> expected result -> pass criterion -> recovery.
 
 ## 15. Evidence Plan
 
-| Evidence | Requirement | Capture Method | Planned Location | Status |
-|---|---|---|---|---|
-| runtime preflight | 013 | terminal text/screenshot | `evidence/runtime/preflight/` | TODO |
-| OOM monitor series | 003 | raw log/text | `evidence/oom/` | TODO |
-| OOM termination log | 004 | raw log/text | `evidence/oom/` | TODO |
-| OOM before/after | 005 | comparison table + raw runs | `evidence/oom/` | TODO |
-| CPU process capture | 006 | top/ps/monitor output | `evidence/cpu/` | TODO |
-| CPU watchdog log | 007 | raw log | `evidence/cpu/` | TODO |
-| CPU before/after | 008 | comparison | `evidence/cpu/` | TODO |
-| Deadlock PID/thread/stall | 009-011 | ps/top/log outputs | `evidence/deadlock/` | TODO |
-| Deadlock before/after | 012 | comparison | `evidence/deadlock/` | TODO |
-| final issue-style reports | 001-002 | Markdown/GitHub Issues | `reports/` | TODO |
+| Evidence | Requirement | Location | Status |
+|---|---|---|---|
+| preflight | REQ-013 | `evidence/runtime/preflight/` | `TODO` |
+| OOM memory series + termination logs + before/after | REQ-003~005 | `evidence/oom/` | `TODO` |
+| CPU PID spike + Watchdog + before/after | REQ-006~008 | `evidence/cpu/` | `TODO` |
+| Deadlock PID/thread/log wait + before/after | REQ-009~012 | `evidence/deadlock/` | `TODO` |
+| final reports | REQ-001~002 | `reports/` | templates `IMPLEMENTED`, final evidence pending |
+| learner explanation | REQ-016 | `docs/LEARNING-GUIDE.md` | preparation `IMPLEMENTED`, G7 pending |
 
-## 16. Completion Gates
+## 16. G4 Self Review
+
+Self Review record: `docs/SELF-REVIEW.md`.
+
+Result:
+
+- BLOCKER: `0`
+- MAJOR: `0`
+- one evidence-reliability defect was found during fixture testing (`pgrep -f` ancestor false match), fixed and retested
+- no false Runtime PASS
+- no secret exposure
+- no Control Tower write
+- no reverse-engineered artifact use
+
+G4 status for implemented/static scope: `PASS`.
+
+## 17. Completion Gates
 
 | Gate | Exit Condition | Status |
 |---|---|---|
-| G1 SOURCE | Source states, Mode, gaps and requirement provenance confirmed | `PASS` |
-| G2 BUILD | minimal report/runtime/test/learning structure exists | TODO |
-| G3 TEST | static checks pass; runtime checks accurately remain NEEDS-RUNTIME until run | TODO |
-| G4 REVIEW | BLOCKER=0, MAJOR=0 for implemented/static scope | TODO |
-| G5 RUNTIME | supplied app is actually executed for all required cases | NEEDS-RUNTIME |
-| G6 EVIDENCE | all required actual evidence stored/linked | TODO |
-| G7 LEARN | mission concepts and own-command explanations documented | TODO |
-| G8 MERGE | final Mission PR merged after all required gates | TODO |
+| G1 SOURCE | Source state/mode/gaps/provenance fixed | `PASS` |
+| G2 BUILD | minimal required support artifacts exist | `PASS` |
+| G3 TEST | automated/static support tests pass; no fake runtime | `PASS` |
+| G4 REVIEW | BLOCKER=0, MAJOR=0 for current scope | `PASS` |
+| G5 RUNTIME | actual official app executed for all mandatory cases | `NEEDS-RUNTIME` |
+| G6 EVIDENCE | actual required evidence complete | `TODO` |
+| G7 LEARN | evidence-linked beginner explanation complete | `TODO` (guide prepared) |
+| G8 MERGE | Mission PR merged after all gates | `TODO` |
 
-## 17. STOP Rule
+Current stop point: `G5 HUMAN RUNTIME`.
 
-Stop mission-completion work when all of the following are true:
+## 18. STOP Rule
 
-- official mandatory Mission requirements are met
-- Evaluation is satisfied if an official source is recovered, or the Evaluation gap remains explicitly documented
+Mission completion occurs only when all are true:
+
+- official mandatory requirements satisfied
+- official Evaluation satisfied if recovered, otherwise gap retained explicitly
 - BLOCKER=0
 - MAJOR=0
 - required tests pass
-- actual runtime requirements are complete
-- required evidence is complete
-- G8 merge is complete
+- actual Human Runtime complete
+- actual Evidence complete
+- G7 learning complete
+- G8 merge complete
 
-Do not delay completion for bonus scheduling inference, extra observability infrastructure, architecture rewrites or unrelated hardening.
+Do not delay completion for bonus scheduling inference, unrelated hardening, extra frameworks or architecture rewrites.
 
-## 18. Handoff Contract
+## 19. Handoff Contract
 
-At Mission completion create:
+After G8 create:
 
 - `HANDOFF.md`
 - `mission-result.yaml`
 
-They must record Mission ID, frozen baseline SHA, final commit/PR, Source Mode/Confidence/Gaps, requirement result, G1-G8 state, tests, BLOCKER/MAJOR count, actual runtime, evidence locations, learning state and remaining backlog. The Control Tower remains unchanged by this Workcell.
+They must record Mission ID, frozen baseline SHA, final commit/PR, Source Mode/Confidence/Gaps, requirement status, G1-G8 status, tests, BLOCKER/MAJOR counts, actual runtime, evidence locations, learning status and remaining backlog.
+
+Do not create a completion handoff or report Mission COMPLETE before G5-G8 are actually done.
