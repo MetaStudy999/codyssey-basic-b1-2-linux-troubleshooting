@@ -1,0 +1,41 @@
+B1-2 CPU INTERVAL TELEMETRY — ACTUAL RUNTIME EVIDENCE
+GitHub Actions run: 31217376403
+Artifact: b1-2-cpu-interval / 9009041836
+Artifact digest: sha256:468047bc61c83b46beee67119cecb4fccc79dcd0a5e1f1a499152f02b4c59e2c
+Runner: Ubuntu 24.04, non-root
+Configuration: MEMORY_LIMIT=512, CPU_MAX_OCCUPY=90, MULTI_THREAD_ENABLE=false, AGENT_PORT=15034
+Process group leader PID: 2373
+Worker/listener process PID: 2378
+Sampling: Linux /proc/<pid>/stat delta, approximately every 0.25 seconds
+
+[selected worker/listener interval samples]
+2.302s PID 2378 CPU 3.91%
+5.372s PID 2378 CPU 3.91%
+8.442s PID 2378 CPU 7.82%
+11.512s PID 2378 CPU 7.82%
+14.838s PID 2378 CPU 7.82%
+17.908s PID 2378 CPU 11.73%
+20.978s PID 2378 CPU 15.64%
+24.048s PID 2378 CPU 15.63%
+27.118s PID 2378 CPU 19.54%
+30.188s PID 2378 CPU 15.64%
+
+[max observed interval CPU]
+pid=2373 comm=agent-leak-app- max_interval_cpu=27.36% samples=118
+pid=2378 comm=agent-leak-app- max_interval_cpu=19.54% samples=118
+
+[corresponding application telemetry]
+20:47:50 CpuWorker Current Load: 5.00%
+20:47:56 CpuWorker Current Load: 16.33%
+20:48:03 CpuWorker Current Load: 23.70%
+20:48:09 CpuWorker Current Load: 35.04%
+20:48:12 CpuWorker Current Load: 40.65%
+20:48:15 CpuWorker Current Load: 49.99%
+20:48:18 CpuWorker Current Load: 56.92%
+20:48:18 [CRITICAL] CPU Threshold Violated! (56.919999999999995%).
+launcher_exit_code=143
+
+Interpretation:
+- The OS-level interval samples are process-specific, not system-wide metrics, and show the supplied listener process's short-interval CPU observations rising from low single digits into the high teens before protection termination.
+- The application's own CpuWorker telemetry rises more steeply to 56.92%. The two measurement methods are not asserted to be numerically identical because their sampling/metric definitions differ.
+- No literal WATCHDOG/SIGTERM log line was present in this supplied build; termination evidence is the actual threshold violation plus exit 143.
