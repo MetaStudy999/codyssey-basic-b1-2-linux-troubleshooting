@@ -5,8 +5,8 @@
 ## Workcell status
 
 - Control Tower frozen baseline: `0d1581b3e82366988f57e1d76da311c028b8e15e`
-- Work branch: `mission/B1-2`
-- Mission PR: `#1`
+- Mission PR: `#1` — `MERGED`
+- Mission merge commit: `6d0fabdaa220461ffe6981c69c7bd1ff5df92ad9`
 - G1 SOURCE: `PASS`
 - G2 BUILD: `PASS`
 - G3 TEST: `PASS`
@@ -14,12 +14,13 @@
 - G5 RUNTIME: `PASS`
 - G6 EVIDENCE: `PASS`
 - G7 LEARN: `PASS` (learning artifact; personal mastery is separate)
-- G8 MERGE: `READY / PENDING`
+- G8 MERGE: `PASS`
+- Execution status: `PASS`
 - Source Mode: `MISSION-LED`
 - Mission PDF: `VALID`
 - Evaluation Markdown: official provenance `UNVERIFIED`
 
-실제 `agent-app-leak-x86`를 non-root Ubuntu 24.04 환경에서 실행해 OOM, CPU, Deadlock을 검증했다. Mission PDF의 예시 출력은 실제 Evidence로 사용하지 않았다.
+실제 `agent-leak-app-x86`를 non-root Ubuntu 24.04 환경에서 실행해 OOM, CPU, Deadlock을 검증했다. Mission PDF의 예시 출력은 실제 Evidence로 사용하지 않았다.
 
 ## Verified results
 
@@ -31,13 +32,20 @@
 
 CPU build note: 공식 제공 바이너리는 literal `[WATCHDOG]`/`SIGTERM` 앱 로그를 출력하지 않았다. 실제 보호 signature인 `CPU Threshold Violated!`와 process exit 143을 그대로 기록했으며, 존재하지 않은 로그를 만들지 않았다.
 
+## Completion / Handoff
+
+- [Mission Work Packet](./MISSION-WORK-PACKET.md)
+- [Mission Handoff](./HANDOFF.md)
+- [Machine-readable mission result](./mission-result.yaml)
+- [Final Self Review](./docs/SELF-REVIEW.md)
+
+대표 Repository는 이 Workcell에서 수정하지 않았다. B1-2 결과는 `HANDOFF.md`와 `mission-result.yaml`을 통해 Serial Integration 단계로 전달한다.
+
 ## Source documents
 
 - [B1-2 미션 원본 PDF](./b1-2-mission.pdf) — 최상위 Source of Truth
 - [B1-2 미션 Markdown](./b1-2-mission.md) — PDF 변환본; 사전 조건 표 변환 충돌은 PDF 우선
 - [B1-2 평가문항 후보](./b1-2-evaluation.md) — official provenance 확인 전까지 provisional review criteria
-- [Mission Work Packet](./MISSION-WORK-PACKET.md)
-- [Final Self Review](./docs/SELF-REVIEW.md)
 
 ## Reports
 
@@ -69,7 +77,7 @@ Key actual workflow runs:
 - focused deadlock: `31216931577`
 - focused CPU: `31217119811`
 - CPU interval telemetry: `31217376403`
-- final repository validation: `31217849075` — `PASS`
+- final repository validation: `31218028653` — `PASS`
 
 ## Implementation / test harness
 
@@ -87,7 +95,7 @@ scripts/
 
 ## Final validation
 
-GitHub Actions run `31217849075`에서 다음을 모두 통과했다.
+최종 Mission head에서 GitHub Actions run `31218028653`가 성공했다.
 
 ```text
 shell syntax
