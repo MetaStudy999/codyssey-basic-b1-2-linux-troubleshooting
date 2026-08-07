@@ -45,8 +45,43 @@ if [[ ! -w "$AGENT_LOG_DIR" ]]; then
   exit 2
 fi
 
+find_agent_pid() {
+  local pid cursor ancestors
+
+  # Prefer the executable/comm name. This avoids matching the command line of a
+  # shell that merely contains AGENT_PROCESS_PATTERN as text.
+  pid="$(pgrep -x -- "$AGENT_PROCESS_PATTERN" | head -n 1 || true)"
+  if [[ -n "$pid" ]]; then
+    printf '%s\n' "$pid"
+    return 0
+  fi
+
+  # Fallback to full command-line matching for wrapped/renamed executions, but
+  # exclude this monitor and every ancestor shell/runner to avoid false matches.
+  ancestors=" $$"
+  cursor="$PPID"
+  while [[ "$cursor" =~ ^[0-9]+$ ]] && (( cursor > 1 )); do
+    ancestors+=" $cursor"
+    cursor="$(ps -o ppid= -p "$cursor" 2>/dev/null | awk '{print $1}')"
+    [[ -n "$cursor" ]] || break
+  done
+
+  while read -r pid; do
+    [[ -n "$pid" ]] || continue
+    if [[ " $ancestors " == *" $pid "* ]]; then
+      continue
+    fi
+    if ps -p "$pid" >/dev/null 2>&1; then
+      printf '%s\n' "$pid"
+      return 0
+    fi
+  done < <(pgrep -f -- "$AGENT_PROCESS_PATTERN" || true)
+
+  return 1
+}
+
 TIMESTAMP="$(date '+%Y-%m-%d %H:%M:%S%z')"
-PID="$(pgrep -f -- "$AGENT_PROCESS_PATTERN" | head -n 1 || true)"
+PID="$(find_agent_pid || true)"
 
 if [[ -z "$PID" ]]; then
   LINE="[$TIMESTAMP] PROCESS_STATE:missing PATTERN:${AGENT_PROCESS_PATTERN} PORT:${AGENT_PORT}"
