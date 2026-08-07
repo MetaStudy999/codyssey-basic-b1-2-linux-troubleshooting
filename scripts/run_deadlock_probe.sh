@@ -33,8 +33,13 @@ cleanup() {
 }
 
 run_one() {
-  local label="$1" mt="$2" dir="$OUT/$label" home="$WORK/$label/home"
+  local label mt dir home
   local leader pid i
+  label="$1"
+  mt="$2"
+  dir="$OUT/$label"
+  home="$WORK/$label/home"
+
   mkdir -p "$dir" "$home/upload_files" "$home/api_keys"
   printf 'agent_api_key_test\n' > "$home/api_keys/secret.key"
 
