@@ -6,79 +6,107 @@
 
 - Control Tower frozen baseline: `0d1581b3e82366988f57e1d76da311c028b8e15e`
 - Work branch: `mission/B1-2`
+- Mission PR: `#1`
 - G1 SOURCE: `PASS`
+- G2 BUILD: `PASS`
+- G3 TEST: `PASS`
+- G4 REVIEW: `PASS` — BLOCKER 0, MAJOR 0
+- G5 RUNTIME: `PASS`
+- G6 EVIDENCE: `PASS`
+- G7 LEARN: `PASS` (learning artifact; personal mastery is separate)
+- G8 MERGE: `READY / PENDING`
 - Source Mode: `MISSION-LED`
 - Mission PDF: `VALID`
 - Evaluation Markdown: official provenance `UNVERIFIED`
-- G2 BUILD: `PASS`
-- G3 TEST: `PASS` for static/support scope
-- G4 REVIEW: `PASS` — BLOCKER 0, MAJOR 0
-- G5 RUNTIME: `NEEDS-RUNTIME`
-- G6 EVIDENCE: `TODO`
-- G7 LEARN: `TODO` (guide prepared)
-- G8 MERGE: `TODO`
 
-실제 `agent-app-leak` 실행 전에는 OOM/CPU/Deadlock 결과를 PASS로 표시하지 않는다.
+실제 `agent-app-leak-x86`를 non-root Ubuntu 24.04 환경에서 실행해 OOM, CPU, Deadlock을 검증했다. Mission PDF의 예시 출력은 실제 Evidence로 사용하지 않았다.
+
+## Verified results
+
+| Case | Before / After | Actual result |
+|---|---|---|
+| OOM | `MEMORY_LIMIT 64 → 128` | RSS/Heap 증가 + MemoryGuard self-termination; 생존 `8초 → 18초` |
+| CPU | `CPU_MAX_OCCUPY 10 → 90` | 낮은 값에서는 cooldown/보호 위반 없음, 높은 값에서는 부하 상승 후 `CPU Threshold Violated!` + exit 143 |
+| Deadlock | `MULTI_THREAD_ENABLE true → false` | true: PID 생존 + RSS/로그 정체 + futex wait + mutual circular wait; false: 작업 진행 지속 |
+
+CPU build note: 공식 제공 바이너리는 literal `[WATCHDOG]`/`SIGTERM` 앱 로그를 출력하지 않았다. 실제 보호 signature인 `CPU Threshold Violated!`와 process exit 143을 그대로 기록했으며, 존재하지 않은 로그를 만들지 않았다.
 
 ## Source documents
 
 - [B1-2 미션 원본 PDF](./b1-2-mission.pdf) — 최상위 Source of Truth
 - [B1-2 미션 Markdown](./b1-2-mission.md) — PDF 변환본; 사전 조건 표 변환 충돌은 PDF 우선
-- [B1-2 평가문항 후보](./b1-2-evaluation.md) — 내용은 존재하지만 공식 provenance 확인 전까지 provisional review criteria
-- [Mission Work Packet](./MISSION-WORK-PACKET.md) — 현재 Workcell 실행 계약과 Requirement Traceability
-- [Self Review](./docs/SELF-REVIEW.md) — G4 BLOCKER/MAJOR 검토 및 수정 기록
-
-## Implementation / support artifacts
-
-```text
-.
-├── AGENTS.md
-├── MISSION-WORK-PACKET.md
-├── docs/
-│   ├── LEARNING-GUIDE.md
-│   ├── RUNTIME-GUIDE.md
-│   └── SELF-REVIEW.md
-├── evidence/
-│   └── README.md
-├── reports/
-│   ├── oom.md
-│   ├── cpu.md
-│   └── deadlock.md
-└── scripts/
-    ├── monitor.sh
-    └── validate_reports.py
-```
-
-## Static validation
-
-```bash
-bash -n scripts/monitor.sh
-python3 -m py_compile scripts/validate_reports.py
-python3 scripts/validate_reports.py
-```
-
-지원 코드에 대해 shell syntax, Python compile, report contract, monitor positive/missing-process fixture를 검증했다. 정적/fixture 검증은 **실제 Linux + 공식 제공 앱 Runtime 증빙을 대신하지 않는다.**
-
-## Runtime entry point
-
-공식 제공 `agent-app-leak.zip`을 확보한 뒤 [Human Runtime Guide](./docs/RUNTIME-GUIDE.md)를 따른다.
-
-최소 실제 증빙:
-
-1. OOM — 메모리 증가 + MemoryGuard/종료 로그 + `MEMORY_LIMIT` 변경 전·후
-2. CPU — 대상 PID CPU 급상승 + Watchdog/종료 로그 + `CPU_MAX_OCCUPY` 변경 전·후
-3. Deadlock — PID 생존 + CPU/MEM/로그 정체 + thread/lock 대기 근거 + `MULTI_THREAD_ENABLE` 변경 전·후
+- [B1-2 평가문항 후보](./b1-2-evaluation.md) — official provenance 확인 전까지 provisional review criteria
+- [Mission Work Packet](./MISSION-WORK-PACKET.md)
+- [Final Self Review](./docs/SELF-REVIEW.md)
 
 ## Reports
 
-- [OOM report](./reports/oom.md)
-- [CPU report](./reports/cpu.md)
-- [Deadlock report](./reports/deadlock.md)
+- [OOM report](./reports/oom.md) — `PASS`
+- [CPU report](./reports/cpu.md) — `PASS`
+- [Deadlock report](./reports/deadlock.md) — `PASS`
 
-현재 3개 보고서는 `NEEDS-RUNTIME` 템플릿이다. 실제 로그/PID/타임스탬프/Before & After가 확보된 뒤에만 최종 리포트로 전환한다.
+## Permanent Evidence
+
+```text
+evidence/
+├── oom/
+│   ├── before.log
+│   └── after.log
+├── cpu/
+│   ├── before.log
+│   ├── after.log
+│   └── interval.log
+└── deadlock/
+    ├── enabled.log
+    └── disabled.log
+```
+
+Key actual workflow runs:
+
+- archive inspect: `31216239334`
+- boot/preflight: `31216306554`
+- core runtime: `31216511416`
+- focused deadlock: `31216931577`
+- focused CPU: `31217119811`
+- CPU interval telemetry: `31217376403`
+- final repository validation: `31217849075` — `PASS`
+
+## Implementation / test harness
+
+```text
+scripts/
+├── monitor.sh
+├── validate_reports.py
+├── run_runtime_cases.sh
+├── run_deadlock_probe.sh
+├── run_cpu_probe.sh
+└── cpu_interval_sampler.py
+```
+
+`monitor.sh`는 단순 command-line pattern보다 tcp/15034의 실제 listener PID를 우선해 관제한다. CPU short spike는 `/proc/<pid>/stat` tick delta를 이용한 interval sampler로 보완했다.
+
+## Final validation
+
+GitHub Actions run `31217849075`에서 다음을 모두 통과했다.
+
+```text
+shell syntax
+Python compile
+3 report static contract
+all permanent evidence files
+no TODO / no NEEDS-RUNTIME in final reports
+OOM MemoryGuard evidence markers
+CPU threshold + interval evidence markers
+Deadlock circular-wait evidence markers
+G5/G6/G7 PASS markers
+BLOCKER=0 / MAJOR=0
+```
+
+Result: `Final B1-2 repository validation PASS.`
 
 ## Learning
 
 - [B1-2 Learning Guide](./docs/LEARNING-GUIDE.md)
+- [Runtime Guide](./docs/RUNTIME-GUIDE.md)
 
-명령 복사보다 `왜 그 명령을 사용했고 어떤 출력으로 장애를 판정했는지`를 설명할 수 있어야 한다.
+저장소가 완성됐다고 학습 상태를 자동으로 `MASTERED`로 올리지 않는다. 학습자는 실제 Evidence를 기준으로 각 장애의 판단 과정을 자기 말로 설명하는 단계가 별도다.
