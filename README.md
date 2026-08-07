@@ -10,8 +10,13 @@
 - Source Mode: `MISSION-LED`
 - Mission PDF: `VALID`
 - Evaluation Markdown: official provenance `UNVERIFIED`
-- G2 BUILD: repository support artifacts prepared on this branch
-- G5 RUNTIME / G6 EVIDENCE: `NEEDS-RUNTIME`
+- G2 BUILD: `PASS`
+- G3 TEST: `PASS` for static/support scope
+- G4 REVIEW: `PASS` — BLOCKER 0, MAJOR 0
+- G5 RUNTIME: `NEEDS-RUNTIME`
+- G6 EVIDENCE: `TODO`
+- G7 LEARN: `TODO` (guide prepared)
+- G8 MERGE: `TODO`
 
 실제 `agent-app-leak` 실행 전에는 OOM/CPU/Deadlock 결과를 PASS로 표시하지 않는다.
 
@@ -21,6 +26,7 @@
 - [B1-2 미션 Markdown](./b1-2-mission.md) — PDF 변환본; 사전 조건 표 변환 충돌은 PDF 우선
 - [B1-2 평가문항 후보](./b1-2-evaluation.md) — 내용은 존재하지만 공식 provenance 확인 전까지 provisional review criteria
 - [Mission Work Packet](./MISSION-WORK-PACKET.md) — 현재 Workcell 실행 계약과 Requirement Traceability
+- [Self Review](./docs/SELF-REVIEW.md) — G4 BLOCKER/MAJOR 검토 및 수정 기록
 
 ## Implementation / support artifacts
 
@@ -30,7 +36,8 @@
 ├── MISSION-WORK-PACKET.md
 ├── docs/
 │   ├── LEARNING-GUIDE.md
-│   └── RUNTIME-GUIDE.md
+│   ├── RUNTIME-GUIDE.md
+│   └── SELF-REVIEW.md
 ├── evidence/
 │   └── README.md
 ├── reports/
@@ -46,10 +53,11 @@
 
 ```bash
 bash -n scripts/monitor.sh
+python3 -m py_compile scripts/validate_reports.py
 python3 scripts/validate_reports.py
 ```
 
-정적 검증은 문서/스크립트 구조만 검증한다. **실제 Linux Runtime 증빙을 대신하지 않는다.**
+지원 코드에 대해 shell syntax, Python compile, report contract, monitor positive/missing-process fixture를 검증했다. 정적/fixture 검증은 **실제 Linux + 공식 제공 앱 Runtime 증빙을 대신하지 않는다.**
 
 ## Runtime entry point
 
