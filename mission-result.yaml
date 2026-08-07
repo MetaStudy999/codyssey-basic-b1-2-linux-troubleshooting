@@ -1,0 +1,103 @@
+schema_version: 1
+mission:
+  id: "B1-2"
+  title: "컴퓨터가 갑자기 느려지거나 멈췄을 때 원인 찾아 고치기"
+
+control_tower:
+  repository: "MetaStudy999/codyssey-basic"
+  baseline_sha: "0d1581b3e82366988f57e1d76da311c028b8e15e"
+  drift: "NONE"
+
+mission_repository:
+  repository: "MetaStudy999/codyssey-basic-b1-2-linux-troubleshooting"
+  baseline_sha: "b3f22eed3e14bda831f5afd2c745c8a8c53d906d"
+  final_commit_sha: "6d0fabdaa220461ffe6981c69c7bd1ff5df92ad9"
+  pull_request: "https://github.com/MetaStudy999/codyssey-basic-b1-2-linux-troubleshooting/pull/1"
+  merge_status: "MERGED"
+
+source:
+  mode: "MISSION_LED"
+  confidence: "HIGH"
+  mission_source:
+    state: "VALID"
+    location: "b1-2-mission.pdf"
+  evaluation_source:
+    state: "UNVERIFIED"
+    location: "b1-2-evaluation.md"
+  gaps:
+    - "Official Evaluation artifact/provenance remains unverified; provisional rubric was not promoted to official Mission requirements."
+
+execution:
+  status: "PASS"
+  learning: "NOT-STUDIED"
+  current_gate: "G8_MERGE"
+  verdict: "ACCEPT"
+
+gates:
+  G1_SOURCE: "PASS"
+  G2_BUILD: "PASS"
+  G3_TEST: "PASS"
+  G4_REVIEW: "PASS"
+  G5_RUNTIME: "PASS"
+  G6_EVIDENCE: "PASS"
+  G7_LEARN: "PASS"
+  G8_MERGE: "PASS"
+
+requirements:
+  confirmed: 16
+  passed: 16
+  partial: 0
+  failed: 0
+  unverified: 0
+
+validation:
+  tests: "PASS"
+  commands:
+    - "python3 scripts/validate_reports.py"
+    - "bash -n scripts/monitor.sh"
+    - "python3 -m py_compile scripts/*.py"
+    - "GitHub Actions: B1-2 Final Validation run 31218028653"
+  blocker: 0
+  major: 0
+  minor: 0
+
+runtime:
+  required: true
+  owner: "AI"
+  result: "PASS"
+  notes: "Official supplied x86 binary executed on bounded non-root Ubuntu 24.04 GitHub-hosted runners. OOM, CPU protection and Deadlock evidence were captured without reverse engineering."
+
+evidence:
+  complete: true
+  locations:
+    - "evidence/oom/before.log"
+    - "evidence/oom/after.log"
+    - "evidence/cpu/before.log"
+    - "evidence/cpu/after.log"
+    - "evidence/cpu/interval.log"
+    - "evidence/deadlock/enabled.log"
+    - "evidence/deadlock/disabled.log"
+    - "reports/oom.md"
+    - "reports/cpu.md"
+    - "reports/deadlock.md"
+  missing: []
+
+dependency:
+  state: "RECOMMENDED"
+  related_missions:
+    - "B1-1"
+
+risks:
+  - "Official Evaluation provenance is still UNVERIFIED; re-map only if an authoritative Evaluation artifact is later supplied."
+
+backlog:
+  - "Optional scheduling-algorithm inference bonus task."
+  - "Production-grade observability/alerting extensions."
+  - "Optional local Ubuntu replay for personal learning practice."
+
+representative_integration:
+  required: true
+  status: "PENDING"
+  requested_updates:
+    - "config/missions.yaml"
+  generated_outputs_direct_edit: false
