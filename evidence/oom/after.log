@@ -1,0 +1,30 @@
+B1-2 OOM AFTER — ACTUAL RUNTIME EVIDENCE
+GitHub Actions run: 31216511416
+Artifact: b1-2-runtime-cases / 9008779652
+Runner: Ubuntu 24.04, user=runner uid=1001
+Configuration: MEMORY_LIMIT=128, CPU_MAX_OCCUPY=100, MULTI_THREAD_ENABLE=false, AGENT_PORT=15034
+Started: 2026-08-07T20:35:32Z
+Ended: 2026-08-07T20:35:50Z
+Listener PID: 2337
+Elapsed: 18 seconds
+Launcher exit code: 137
+
+[monitor.sh]
+[2026-08-07 20:35:32+0000] PID:2337 CPU:12.5% MEM:0.1% RSS_KB:18176 THREADS:1 STAT:SN ETIME:00:00 COMM:agent-leak-app- PORT:15034/listen
+[2026-08-07 20:35:35+0000] PID:2337 CPU:1.1% MEM:0.2% RSS_KB:43780 THREADS:1 STAT:SN ETIME:00:02 COMM:agent-leak-app- PORT:15034/listen
+[2026-08-07 20:35:41+0000] PID:2337 CPU:0.4% MEM:0.5% RSS_KB:94988 THREADS:1 STAT:SN ETIME:00:09 COMM:agent-leak-app- PORT:15034/listen
+[2026-08-07 20:35:43+0000] PID:2337 CPU:0.3% MEM:0.7% RSS_KB:120592 THREADS:1 STAT:SN ETIME:00:11 COMM:agent-leak-app- PORT:15034/listen
+[2026-08-07 20:35:49+0000] PID:2337 CPU:0.2% MEM:0.8% RSS_KB:146196 THREADS:1 STAT:SN ETIME:00:16 COMM:agent-leak-app- PORT:15034/listen
+
+[application log]
+2026-08-07 20:35:34,506 [INFO] [MemoryWorker] Current Heap: 25MB
+2026-08-07 20:35:37,516 [INFO] [MemoryWorker] Current Heap: 50MB
+2026-08-07 20:35:40,536 [INFO] [MemoryWorker] Current Heap: 75MB
+2026-08-07 20:35:43,554 [INFO] [MemoryWorker] Current Heap: 100MB
+2026-08-07 20:35:46,572 [INFO] [MemoryWorker] Current Heap: 125MB
+2026-08-07 20:35:49,591 [INFO] [MemoryWorker] Current Heap: 150MB
+2026-08-07 20:35:49,592 [CRITICAL] [MemoryGuard] Memory limit exceeded (150MB >= 128MB) / (Recommend Over 256MB)
+2026-08-07 20:35:49,592 [CRITICAL] [MemoryGuard] Self-terminating process 2337 to prevent system instability.
+
+Before/After result: increasing MEMORY_LIMIT 64 -> 128 extended measured process lifetime from 8 seconds -> 18 seconds in these bounded runs while memory continued to grow.
+Interpretation boundary: these are excerpts from the actual supplied binary run. Mission PDF example output was not used as runtime evidence.
