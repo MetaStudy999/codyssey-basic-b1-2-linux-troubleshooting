@@ -34,6 +34,8 @@ require_command pgrep
 require_command ps
 require_command awk
 require_command date
+require_command ss
+require_command sed
 
 if [[ ! -d "$AGENT_LOG_DIR" ]]; then
   error "log directory does not exist: $AGENT_LOG_DIR"
@@ -45,19 +47,25 @@ if [[ ! -w "$AGENT_LOG_DIR" ]]; then
   exit 2
 fi
 
+find_listener_pid() {
+  # The supplied launcher may fork a worker. The worker that owns AGENT_PORT is
+  # the process whose resource usage matters, so prefer its socket PID.
+  ss -lntpH 2>/dev/null \
+    | awk -v port="$AGENT_PORT" '$4 ~ (":" port "$") {print; exit}' \
+    | sed -n 's/.*pid=\([0-9][0-9]*\).*/\1/p'
+}
+
 find_agent_pid() {
   local pid cursor ancestors
 
-  # Prefer the executable/comm name. This avoids matching the command line of a
-  # shell that merely contains AGENT_PROCESS_PATTERN as text.
-  pid="$(pgrep -x -- "$AGENT_PROCESS_PATTERN" | head -n 1 || true)"
-  if [[ -n "$pid" ]]; then
+  pid="$(find_listener_pid || true)"
+  if [[ -n "$pid" ]] && ps -p "$pid" >/dev/null 2>&1; then
     printf '%s\n' "$pid"
     return 0
   fi
 
-  # Fallback to full command-line matching for wrapped/renamed executions, but
-  # exclude this monitor and every ancestor shell/runner to avoid false matches.
+  # Fallback to full command-line matching before the socket is ready, while
+  # excluding this monitor and its ancestor shells/runners.
   ancestors=" $$"
   cursor="$PPID"
   while [[ "$cursor" =~ ^[0-9]+$ ]] && (( cursor > 1 )); do
@@ -107,13 +115,9 @@ fi
 
 THREADS="$(ps -T -p "$PID" --no-headers 2>/dev/null | awk 'END {print NR+0}')"
 
-PORT_STATE="unknown"
-if command -v ss >/dev/null 2>&1; then
-  if ss -lntH 2>/dev/null | awk -v port="$AGENT_PORT" '$4 ~ (":" port "$") {found=1} END {exit !found}'; then
-    PORT_STATE="listen"
-  else
-    PORT_STATE="not-listen"
-  fi
+PORT_STATE="not-listen"
+if ss -lntH 2>/dev/null | awk -v port="$AGENT_PORT" '$4 ~ (":" port "$") {found=1} END {exit !found}'; then
+  PORT_STATE="listen"
 fi
 
 LINE="[$TIMESTAMP] PID:${PID} CPU:${CPU}% MEM:${MEM}% RSS_KB:${RSS_KB} THREADS:${THREADS} STAT:${STAT} ETIME:${ETIME} COMM:${COMM} PORT:${AGENT_PORT}/${PORT_STATE}"
