@@ -1,0 +1,112 @@
+name: B1-2 Runtime Probe
+
+on:
+  push:
+    branches:
+      - mission/B1-2
+    paths:
+      - .github/workflows/b1-2-runtime-probe.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 3
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Run bounded non-root probe
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          echo "runtime_user=$(id -un) uid=$(id -u)"
+          test "$(id -u)" -ne 0
+
+          rm -rf /tmp/b1-2-probe
+          mkdir -p /tmp/b1-2-probe/bin
+          unzip -q agent-app-leak.zip -d /tmp/b1-2-probe/bin
+          chmod +x /tmp/b1-2-probe/bin/agent-leak-app-x86
+
+          export AGENT_HOME=/tmp/b1-2-probe/home
+          export AGENT_PORT=15034
+          export AGENT_UPLOAD_DIR="$AGENT_HOME/upload_files"
+          export AGENT_KEY_PATH="$AGENT_HOME/api_keys"
+          export AGENT_LOG_DIR=/tmp/b1-2-probe/evidence
+          export MEMORY_LIMIT=64
+          export CPU_MAX_OCCUPY=30
+          export MULTI_THREAD_ENABLE=true
+
+          mkdir -p "$AGENT_UPLOAD_DIR" "$AGENT_KEY_PATH" "$AGENT_LOG_DIR"
+          printf 'agent_api_key_test\n' > "$AGENT_KEY_PATH/secret.key"
+
+          {
+            echo "=== PRECHECK ==="
+            env | grep -E '^(AGENT_|MEMORY_LIMIT|CPU_MAX_OCCUPY|MULTI_THREAD_ENABLE)=' | sort
+            echo "secret_file=$AGENT_KEY_PATH/secret.key"
+            ls -ld "$AGENT_HOME" "$AGENT_UPLOAD_DIR" "$AGENT_KEY_PATH" "$AGENT_LOG_DIR"
+            file /tmp/b1-2-probe/bin/agent-leak-app-x86
+            echo
+            echo "=== START ==="
+          } | tee "$AGENT_LOG_DIR/probe-summary.log"
+
+          set +e
+          /tmp/b1-2-probe/bin/agent-leak-app-x86 >"$AGENT_LOG_DIR/app.stdout.log" 2>&1 &
+          APP_PID=$!
+          set -e
+          echo "app_pid=$APP_PID" | tee -a "$AGENT_LOG_DIR/probe-summary.log"
+
+          for i in $(seq 1 25); do
+            if kill -0 "$APP_PID" 2>/dev/null; then
+              echo "--- sample $i ---" | tee -a "$AGENT_LOG_DIR/probe-summary.log"
+              ps -p "$APP_PID" -o pid=,ppid=,%cpu=,%mem=,rss=,etime=,stat=,comm= | tee -a "$AGENT_LOG_DIR/probe-summary.log" || true
+              ss -lntp 2>/dev/null | grep ':15034' | tee -a "$AGENT_LOG_DIR/probe-summary.log" || true
+              AGENT_PROCESS_PATTERN='agent-leak-app-x86' \
+                AGENT_PORT=15034 \
+                AGENT_LOG_DIR="$AGENT_LOG_DIR" \
+                B1_2_MONITOR_LOG="$AGENT_LOG_DIR/monitor.log" \
+                bash scripts/monitor.sh | tee -a "$AGENT_LOG_DIR/probe-summary.log" || true
+            else
+              echo "process_exited_at_sample=$i" | tee -a "$AGENT_LOG_DIR/probe-summary.log"
+              break
+            fi
+            sleep 1
+          done
+
+          if kill -0 "$APP_PID" 2>/dev/null; then
+            echo "bounded_probe_timeout: sending TERM" | tee -a "$AGENT_LOG_DIR/probe-summary.log"
+            kill -TERM "$APP_PID" 2>/dev/null || true
+            sleep 1
+          fi
+          if kill -0 "$APP_PID" 2>/dev/null; then
+            kill -KILL "$APP_PID" 2>/dev/null || true
+          fi
+
+          set +e
+          wait "$APP_PID"
+          APP_RC=$?
+          set -e
+          echo "app_exit_code=$APP_RC" | tee -a "$AGENT_LOG_DIR/probe-summary.log"
+
+          {
+            echo
+            echo "=== APP STDOUT/STDERR ==="
+            cat "$AGENT_LOG_DIR/app.stdout.log" || true
+            echo
+            echo "=== APP LOG DIR ==="
+            find "$AGENT_LOG_DIR" -maxdepth 2 -type f -printf '%p %s bytes\n' | sort
+          } | tee -a "$AGENT_LOG_DIR/probe-summary.log"
+
+          cp -a "$AGENT_LOG_DIR" ./runtime-probe-evidence
+
+      - name: Upload probe evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: b1-2-runtime-probe
+          path: runtime-probe-evidence/
+          if-no-files-found: error
+          retention-days: 7
