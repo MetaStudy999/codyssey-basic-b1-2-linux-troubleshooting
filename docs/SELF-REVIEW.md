@@ -1,54 +1,95 @@
-# B1-2 Self Review — G4
+# B1-2 Final Self Review — G4 Confirmation
 
-- Review type: ChatGPT Self Review, one pass
+- Review type: ChatGPT final self-review after G5/G6 runtime and evidence
 - Branch: `mission/B1-2`
-- Base: `main` @ `b3f22eed3e14bda831f5afd2c745c8a8c53d906d`
+- Mission PR: `#1`
 - Control Tower frozen baseline: `0d1581b3e82366988f57e1d76da311c028b8e15e`
-- Review scope: Source contract, report templates, runtime/evidence guide, process monitor, static validator, README
+- Scope: Source contract, runtime harness, actual OOM/CPU/Deadlock evidence, reports, learning guide, merge readiness
 
-## Result
+## Final Result
 
 - BLOCKER: `0`
 - MAJOR: `0`
-- Runtime status: `NEEDS-RUNTIME`
-- Merge readiness: `NOT READY` until G5/G6/G7 are complete
+- Runtime status: `PASS`
+- Evidence status: `PASS`
+- Learning artifact status: `PASS`
+- Merge readiness: `READY after deterministic final validation`
 
-## Checks
+## Review Checks
 
 | Check | Result | Note |
 |---|---|---|
-| Control Tower write boundary | PASS | Only B1-2 repository was modified. |
-| Mission PDF precedence | PASS | PDF/Markdown prerequisites conflict is documented; PDF is authoritative. |
-| Evaluation provenance | PASS-with-gap | `b1-2-evaluation.md` remains `UNVERIFIED`; no missing evaluation criterion was promoted to official requirement. |
-| Required 3 cases | PASS | OOM, CPU, Deadlock report templates exist. |
-| Required report sections | PASS | Description, Evidence & Logs, Root Cause Analysis, Workaround & Verification, Before & After. |
-| Evidence integrity | PASS | All reports are `NEEDS-RUNTIME`; no Mission example is represented as actual output. |
-| OOM evidence plan | PASS | memory time series, termination log, `MEMORY_LIMIT` two-run comparison. |
-| CPU evidence plan | PASS | target PID CPU, Watchdog log, `CPU_MAX_OCCUPY` comparison. |
-| Deadlock evidence plan | PASS | PID alive, CPU/MEM/log stall, thread evidence, wait reasoning, `MULTI_THREAD_ENABLE` comparison. |
-| Reverse engineering prohibition | PASS | No reconstructed/decompiled artifact was used or committed. |
-| Secret/credential exposure | PASS | No real credential. Mission-required fixed test fixture is not copied into Evidence by default. |
-| Binary handling | PASS | Official runtime ZIP/binaries are gitignored. |
-| Static report validator | TESTED | Python compile + contract run passed in local mirror; it explicitly does not certify runtime. |
-| Monitor syntax | TESTED | `bash -n` passed. |
-| Monitor positive path | TESTED | Fixture process PID/CPU/MEM/RSS/thread/state collection passed. |
-| Monitor missing process | TESTED | Missing process records `PROCESS_STATE:missing` and exits 1. |
-| Actual supplied app | NEEDS-RUNTIME | `agent-app-leak.zip` is not accessible in current AI runtime. |
+| Control Tower write boundary | PASS | No Control Tower file was modified. |
+| Mission PDF precedence | PASS | PDF/Markdown prerequisite conflict remains documented; PDF is authoritative. |
+| Evaluation provenance | PASS-with-gap | `b1-2-evaluation.md` remains `UNVERIFIED`; no provisional item was silently promoted. |
+| Required 3 reports | PASS | OOM, CPU, Deadlock reports are complete. |
+| Required Issue structure | PASS | Description, Evidence & Logs, Root Cause, Workaround & Verification, Before & After. |
+| Evidence integrity | PASS | All report values are from actual controlled Linux runs; Mission examples are not presented as actual output. |
+| OOM | PASS | RSS/Heap growth, actual MemoryGuard termination, 64→128 comparison, 8→18 second lifetime. |
+| CPU | PASS | process-family observation, PID-specific `/proc` interval CPU trend, actual threshold-violation termination, 10→90 comparison. |
+| CPU terminology integrity | PASS | Supplied build did not emit literal WATCHDOG/SIGTERM app lines; report says so explicitly and uses actual `CPU Threshold Violated!` + exit 143. |
+| Deadlock | PASS | PID alive, tcp/15034 alive, RSS/CPU stall, futex wait, mutual WAITING/BLOCKED cycle, true/false comparison. |
+| Reverse-engineering prohibition | PASS | Only file metadata, normal binary execution and Linux OS telemetry were used. No decompilation/disassembly/source reconstruction. |
+| Secret exposure | PASS | No real credential/token committed. `agent_api_key_test` is the Mission-required fixed fixture. |
+| Runtime isolation | PASS | GitHub-hosted non-root Ubuntu runners; bounded timeouts and cleanup used. |
+| Learning preservation | PASS | Learning guide explains actual evidence, commands and OS concepts without claiming personal mastery. |
 
-## Finding resolved during review
+## Actual Runtime Set Reviewed
 
-### SR-001 — `pgrep -f` could select an ancestor runner
+| Purpose | Run | Result |
+|---|---:|---|
+| archive inspection | `31216239334` | PASS |
+| boot/preflight | `31216306554` | PASS |
+| six-case baseline | `31216511416` | PASS; produced OOM evidence and guided focused probes |
+| focused deadlock | `31216931577` | PASS |
+| focused CPU | `31217119811` | PASS |
+| CPU `/proc` interval telemetry | `31217376403` | PASS |
 
-- Severity before fix: `MAJOR` for evidence reliability
-- Symptom found by fixture test: a noninteractive runner command line containing the pattern was selected instead of the fixture process.
-- Fix: prefer `pgrep -x` and make the fallback `pgrep -f` exclude the monitor process and all ancestor PIDs.
-- Verification after fix: fixture returned the correct `agent-leak-app` PID; missing-process case returned exit code 1.
+## Findings Resolved During the Workcell
+
+### SR-001 — Pattern matching could select the wrong process
+
+- Original severity: `MAJOR`
+- Cause: supplied executable uses a launcher/worker process relationship, and command-line pattern matching can select a wrapper/ancestor instead of the tcp/15034 listener.
+- Fix: `monitor.sh` now prefers the PID owning `AGENT_PORT` via `ss -lntp`; pattern matching is only fallback and excludes ancestor runner processes.
+- Verification: actual runtime monitor now follows the port-listening worker PID and records its RSS/CPU/thread state.
 - Final status: `RESOLVED`
 
-## B1-1 monitor reuse decision
+### SR-002 — One combined run did not isolate Deadlock from CPU protection
 
-The B1-1 repository was inspected read-only. Its existing monitor is optimized for B1-1 health checks and records system-wide CPU/MEM plus an Agent PID. B1-2 requires process-specific CPU and memory evidence for the target PID. Therefore B1-2 keeps the same standard-Linux observation philosophy but adds a small mission-local process monitor rather than copying an insufficient health-check script unchanged.
+- Original severity: `MAJOR` for deadlock evidence quality, not for application correctness.
+- Symptom: initial broad case settings allowed CPU protection behavior to interfere before a clean deadlock comparison could be observed.
+- Fix: focused deadlock probe used allowed settings `MEMORY_LIMIT=512`, `CPU_MAX_OCCUPY=10` and varied only `MULTI_THREAD_ENABLE`.
+- Result: clear mutual lock cycle, futex waits, PID/resource stall and true/false comparison.
+- Final status: `RESOLVED`
 
-## Remaining non-code dependency
+### SR-003 — `ps %CPU` lifetime average was insufficient for short CPU bursts
 
-The next mandatory gate is Human Runtime with the official `agent-app-leak.zip`. Until the supplied app is actually executed, G5/G6 and final report PASS are prohibited.
+- Original severity: `MAJOR` for CPU evidence precision.
+- Symptom: `ps %CPU` decayed as elapsed time increased and did not track the application's short periodic load bursts well.
+- Fix: added read-only `/proc/<pid>/stat` tick-delta sampler at ~0.25 second intervals, scoped to the supplied app process group.
+- Result: target worker/listener PID showed interval CPU observations rising into the high teens while application CpuWorker telemetry rose to >50% and triggered protection termination.
+- Final status: `RESOLVED`
+
+### SR-004 — Mission example wording differs from supplied CPU build
+
+- Severity: `MAJOR` if fabricated; resolved by evidence-preserving reporting.
+- Observation: supplied build produced `CPU Threshold Violated!` and exit 143, but did not emit literal `[WATCHDOG]` or `SIGTERM` application text.
+- Decision: do not fabricate missing strings. Report `Watchdog` as the mission's protection-policy concept and quote the actual build signature.
+- Final status: `RESOLVED`
+
+## Independent Review Status
+
+The frozen governance defines one Independent Review as the default. This Workcell environment does not expose a separate Codex/Copilot/independent-model reviewer invocation. Therefore:
+
+- no false claim of an independent AI review is made;
+- deterministic GitHub Actions runs, actual runtime evidence and final PR-diff inspection are used as compensating verification;
+- if an external reviewer is later available, they should restrict review to BLOCKER/MAJOR, false PASS, requirement omission and secret exposure.
+
+This limitation is not an official Mission requirement and does not replace or weaken the actual Runtime/Evidence checks.
+
+## Final Gate-4 Verdict
+
+`BLOCKER=0`, `MAJOR=0` after all findings above were resolved.
+
+The only remaining Workcell action is deterministic final repository validation, then G8 merge and Handoff metadata finalization.
