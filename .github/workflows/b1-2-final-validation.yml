@@ -1,0 +1,68 @@
+name: B1-2 Final Validation
+
+on:
+  push:
+    branches:
+      - mission/B1-2
+    paths:
+      - reports/**
+      - evidence/**
+      - scripts/**
+      - docs/**
+      - MISSION-WORK-PACKET.md
+      - README.md
+      - .github/workflows/b1-2-final-validation.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 3
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Syntax and static report contract
+        shell: bash
+        run: |
+          set -euo pipefail
+          for f in scripts/*.sh; do bash -n "$f"; done
+          python3 -m py_compile scripts/*.py
+          python3 scripts/validate_reports.py
+
+      - name: Verify final report and evidence state
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f evidence/oom/before.log
+          test -f evidence/oom/after.log
+          test -f evidence/cpu/before.log
+          test -f evidence/cpu/after.log
+          test -f evidence/cpu/interval.log
+          test -f evidence/deadlock/enabled.log
+          test -f evidence/deadlock/disabled.log
+          test -f reports/oom.md
+          test -f reports/cpu.md
+          test -f reports/deadlock.md
+
+          ! grep -RIn 'Runtime status: `NEEDS-RUNTIME`' reports/
+          ! grep -RIn 'TODO' reports/
+
+          grep -q 'MemoryGuard' evidence/oom/before.log
+          grep -q 'MemoryGuard' evidence/oom/after.log
+          grep -q 'CPU Threshold Violated' evidence/cpu/after.log
+          grep -q 'max_interval_cpu' evidence/cpu/interval.log
+          grep -q 'WAITING.*Socket_Pool_B' evidence/deadlock/enabled.log
+          grep -q 'WAITING.*Shared_Memory_A' evidence/deadlock/enabled.log
+          grep -q 'MULTI_THREAD_ENABLE=false' evidence/deadlock/disabled.log
+
+          grep -q 'G5 decision: `PASS`' MISSION-WORK-PACKET.md
+          grep -q 'G6 decision: `PASS`' MISSION-WORK-PACKET.md
+          grep -q 'G7 LEARN = PASS' docs/LEARNING-GUIDE.md
+          grep -q 'BLOCKER: `0`' docs/SELF-REVIEW.md
+          grep -q 'MAJOR: `0`' docs/SELF-REVIEW.md
+
+          echo 'Final B1-2 repository validation PASS.'
