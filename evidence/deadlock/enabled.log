@@ -1,0 +1,40 @@
+B1-2 DEADLOCK ENABLED — ACTUAL RUNTIME EVIDENCE
+GitHub Actions run: 31216931577
+Artifact: b1-2-deadlock-probe / 9008913750
+Runner: Ubuntu 24.04, user=runner uid=1001
+Configuration: MEMORY_LIMIT=512, CPU_MAX_OCCUPY=10, MULTI_THREAD_ENABLE=true, AGENT_PORT=15034
+Started: 2026-08-07T20:41:24Z
+Listener PID: 2201
+Observed through: about 59 seconds
+End-of-observation: listener still alive
+
+[application lock sequence]
+2026-08-07 20:41:31,922 [INFO] [Worker-Thread-1] Process Started. Attempting to lock [Shared_Memory_A]...
+2026-08-07 20:41:31,923 [INFO] [AgentWorker][Worker-Thread-2] Process Started. Attempting to lock [Socket_Pool_B]...
+2026-08-07 20:41:31,923 [INFO] [AgentWorker][Worker-Thread-1] LOCK ACQUIRED: [Shared_Memory_A]. (Holding...)
+2026-08-07 20:41:31,923 [INFO] [AgentWorker][Worker-Thread-2] LOCK ACQUIRED: [Socket_Pool_B]. (Holding...)
+2026-08-07 20:41:33,934 [INFO] [AgentWorker][Worker-Thread-1] Need resource [Socket_Pool_B] to finish job.
+2026-08-07 20:41:33,934 [INFO] [AgentWorker][Worker-Thread-2] Need resource [Shared_Memory_A] to write logs.
+2026-08-07 20:41:33,934 [INFO] [AgentWorker][Worker-Thread-1] WAITING for [Socket_Pool_B]... (Status: BLOCKED)
+2026-08-07 20:41:33,934 [INFO] [AgentWorker][Worker-Thread-2] WAITING for [Shared_Memory_A]... (Status: BLOCKED)
+
+[OS/process evidence]
+At about 10 seconds:
+PID 2201 had three threads; worker LWPs 2388 and 2389 were sleeping in futex wait state.
+Repeated samples through about 58 seconds showed:
+- PID 2201 remained alive and listening on tcp/15034.
+- RSS stayed exactly 18184 KiB across the long stalled interval.
+- process CPU fell to 0.0-0.1%.
+- thread count remained 3.
+- all three threads were observed in futex wait (`futex_`).
+
+[monitor.sh tail]
+[2026-08-07 20:42:13+0000] PID:2201 CPU:0.0% MEM:0.1% RSS_KB:18184 THREADS:3 STAT:SNl ETIME:00:48 COMM:agent-leak-app- PORT:15034/listen
+[2026-08-07 20:42:18+0000] PID:2201 CPU:0.0% MEM:0.1% RSS_KB:18184 THREADS:3 STAT:SNl ETIME:00:53 COMM:agent-leak-app- PORT:15034/listen
+[2026-08-07 20:42:23+0000] PID:2201 CPU:0.0% MEM:0.1% RSS_KB:18184 THREADS:3 STAT:SNl ETIME:00:58 COMM:agent-leak-app- PORT:15034/listen
+
+Circular wait demonstrated by actual log:
+Worker-Thread-1 holds Shared_Memory_A and waits for Socket_Pool_B.
+Worker-Thread-2 holds Socket_Pool_B and waits for Shared_Memory_A.
+
+Interpretation boundary: this is actual runtime evidence from the supplied binary. No binary decompilation/reverse engineering was performed.
