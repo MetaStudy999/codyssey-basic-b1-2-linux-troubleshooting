@@ -4,10 +4,10 @@
 
 - 필수 미션 (REQUIRED)
 - 훈련 체계: **Round 01 — CLEAR**
-- Mission 상태: **⬜ NOT STARTED**
-- 현재 운영 모드: **Phase A — REFERENCE BUILD**
+- Runtime Mission 상태: **⬜ NOT STARTED**
+- Phase A Reference 상태: **CORE READY**
 
-B1-2의 Runtime은 B1-1이 실제 `✅ CLEAR`된 뒤 시작합니다. 현재는 공식 Mission/Evaluation을 기준으로 기준 구현·학습자료·검증계획을 선제 준비합니다.
+B1-2 Runtime은 B1-1이 실제 `✅ CLEAR`된 뒤 시작합니다. 현재는 공식 Mission/Evaluation을 기준으로 장애 재현·진단·리포트·검증 경로를 선제 준비한 상태입니다.
 
 ## 공식 원본
 
@@ -20,15 +20,18 @@ B1-2의 Runtime은 B1-1이 실제 `✅ CLEAR`된 뒤 시작합니다. 현재는 
 
 ## 시작 위치
 
-- `training/round-01-clear/REFERENCE-BUILD.md`
-- `training/round-01-clear/BEGINNER-GUIDE.md`
-- `training/round-01-clear/CHECKLIST.md`
+- `training/round-01-clear/REFERENCE-STATUS.md` — Phase A 자체감사 결과
+- `training/round-01-clear/REFERENCE-BUILD.md` — 기준 설계
+- `training/round-01-clear/BEGINNER-GUIDE.md` — Phase C 실제 따라하기
+- `training/round-01-clear/CHECKLIST.md` — Mission/Evaluation/CLEAR Gate
 
 ## Reference 구현/문서
 
-- `training/round-01-clear/monitor.sh` — PID 기반 CPU/MEM/RSS/THREADS 진단 기록
-- `training/round-01-clear/environment/README.md` — 격리 Runtime/Secret 정책
+- `training/round-01-clear/monitor.sh` — PID 기반 CPU/MEM/RSS/THREADS/ELAPSED 시계열 진단
+- `training/round-01-clear/environment/README.md` — 격리 Runtime/Secret/실험 정책
+- `training/round-01-clear/environment/RUNTIME-SAFETY.md` — OOM/CPU/Deadlock 안전 Gate
 - `training/round-01-clear/environment/verify.sh` — Reference/Runtime 검증
+- `training/round-01-clear/docs/experiment-matrix.md` — Before/After 비교 통제
 - `training/round-01-clear/docs/issue-template.md`
 - `training/round-01-clear/docs/oom-report.md`
 - `training/round-01-clear/docs/cpu-report.md`
@@ -40,12 +43,15 @@ B1-2의 Runtime은 B1-1이 실제 `✅ CLEAR`된 뒤 시작합니다. 현재는 
 ## 핵심 원칙
 
 1. 실제 장애를 재현하지 않은 상태에서 PID/수치/로그를 만들어내지 않습니다.
-2. OOM, CPU, Deadlock을 각각 Before & After로 비교합니다.
-3. 장애가 발생하면 재부팅보다 증거 수집을 먼저 합니다.
-4. 환경변수 변경은 Workaround와 근본 해결을 구분합니다.
-5. 실제 Secret 값은 GitHub·채팅·로그·Evidence에 저장하지 않습니다.
-6. 바이너리 디컴파일/리버스 엔지니어링을 하지 않습니다.
+2. OOM, CPU, Deadlock은 같은 host/binary에서 Before & After로 비교합니다.
+3. 핵심 환경변수 조정은 Workaround이며 실제 관측 변화로 효과를 확인합니다.
+4. 장애가 발생하면 재부팅/광범위 kill보다 증거 수집을 먼저 합니다.
+5. Deadlock은 PID 존재만으로 단정하지 않습니다.
+6. 실제 Secret 값은 GitHub·채팅·로그·Evidence에 저장하지 않습니다.
+7. 바이너리 디컴파일/리버스 엔지니어링을 하지 않습니다.
 
 ## 상태
 
-**Reference Build 기준본 준비 중 / Runtime 미시작 / CLEAR 아님**
+**Phase A: CORE READY**
+
+**Runtime: ⬜ NOT STARTED / CLEAR 아님**
