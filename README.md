@@ -1,28 +1,51 @@
 # Codyssey Basic B1-2
 
 ## 구분
-- 필수 미션 (REQUIRED)
-- 현재 훈련 체계: Round 01 — CLEAR
 
-## 시작 위치
-`training/round-01-clear/BEGINNER-GUIDE.md`부터 순서대로 진행합니다.
+- 필수 미션 (REQUIRED)
+- 훈련 체계: **Round 01 — CLEAR**
+- Mission 상태: **⬜ NOT STARTED**
+- 현재 운영 모드: **Phase A — REFERENCE BUILD**
+
+B1-2의 Runtime은 B1-1이 실제 `✅ CLEAR`된 뒤 시작합니다. 현재는 공식 Mission/Evaluation을 기준으로 기준 구현·학습자료·검증계획을 선제 준비합니다.
 
 ## 공식 원본
+
 - `b1-2-mission.pdf`
 - `b1-2-mission.md`
 - `b1-2-evaluation.md`
 - `agent-app-leak.zip`
 
-공식 원본은 수정하지 않습니다. 훈련 결과는 `training/` 아래에서 차수별로 독립 관리합니다.
+공식 원본은 수정하지 않습니다.
 
-## Round 01 원칙
-1. 공식 Mission/Evaluation을 먼저 확인합니다.
-2. 입문자가 이해해야 할 용어와 개념을 먼저 설명합니다.
-3. 필요한 개념도는 짧으면 가로, 길면 세로로 작성합니다.
-4. 명령어와 코드는 입문자가 이유를 이해할 수 있도록 필요한 주석을 빠짐없이 작성합니다.
-5. 환경 확인 → 환경 설정 → 구현 → 검증 → Evidence → CLEAR 순서로 진행합니다.
-6. Secret, 비밀번호, API Key, Private Key는 Git에 저장하지 않습니다.
-7. 현재 차수에 필요하지 않은 고도화는 뒤로 미룹니다.
+## 시작 위치
+
+- `training/round-01-clear/REFERENCE-BUILD.md`
+- `training/round-01-clear/BEGINNER-GUIDE.md`
+- `training/round-01-clear/CHECKLIST.md`
+
+## Reference 구현/문서
+
+- `training/round-01-clear/monitor.sh` — PID 기반 CPU/MEM/RSS/THREADS 진단 기록
+- `training/round-01-clear/environment/README.md` — 격리 Runtime/Secret 정책
+- `training/round-01-clear/environment/verify.sh` — Reference/Runtime 검증
+- `training/round-01-clear/docs/issue-template.md`
+- `training/round-01-clear/docs/oom-report.md`
+- `training/round-01-clear/docs/cpu-report.md`
+- `training/round-01-clear/docs/deadlock-report.md`
+- `training/round-01-clear/docs/requirements-mapping.md`
+- `training/round-01-clear/docs/evaluation-qa.md`
+- `training/round-01-clear/evidence/README.md`
+
+## 핵심 원칙
+
+1. 실제 장애를 재현하지 않은 상태에서 PID/수치/로그를 만들어내지 않습니다.
+2. OOM, CPU, Deadlock을 각각 Before & After로 비교합니다.
+3. 장애가 발생하면 재부팅보다 증거 수집을 먼저 합니다.
+4. 환경변수 변경은 Workaround와 근본 해결을 구분합니다.
+5. 실제 Secret 값은 GitHub·채팅·로그·Evidence에 저장하지 않습니다.
+6. 바이너리 디컴파일/리버스 엔지니어링을 하지 않습니다.
 
 ## 상태
-훈련 골격 반영 완료. 상세 구현은 이 미션을 실제 수행할 때 공식 원본을 기준으로 채웁니다.
+
+**Reference Build 기준본 준비 중 / Runtime 미시작 / CLEAR 아님**
