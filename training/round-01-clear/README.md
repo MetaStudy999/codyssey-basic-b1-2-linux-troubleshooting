@@ -19,17 +19,21 @@ R01 운영 순서는 B1-1 다음에 B1-2를 수행하지만, 이는 Control Towe
 
 ## 시작 순서
 
-1. `REFERENCE-STATUS.md` — 자체감사 결과
-2. `REFERENCE-BUILD.md` — 기준 경로
-3. `environment/RUNTIME-SAFETY.md` — 장애 실험 전 안전 Gate
-4. `docs/experiment-matrix.md` — Before/After 통제
-5. `BEGINNER-GUIDE.md` — 실제 Runtime Step
-6. `CHECKLIST.md` — Evaluation/CLEAR Gate
+1. `START-CHECK.md` — 필수/권장 선행과 현재 지식 상태 자가진단
+2. `REFERENCE-STATUS.md` — 자체감사 결과
+3. `REFERENCE-BUILD.md` — 기준 경로
+4. `environment/RUNTIME-SAFETY.md` — 장애 실험 전 안전 Gate
+5. `docs/experiment-matrix.md` — Before/After 통제
+6. `BEGINNER-GUIDE.md` — 실제 Runtime Step
+7. `CHECKLIST.md` — Evaluation/CLEAR Gate
+
+`START-CHECK.md`는 합격/불합격 시험이 아닙니다. 부족한 개념만 먼저 보충하고 `BEGINNER-GUIDE.md`로 진입하기 위한 안내입니다.
 
 ## 핵심 구조
 
 ```text
-격리 환경
+시작 전 지식 체크
+→ 격리 환경
 → 제공 app/환경변수/Secret(local only)
 → diagnostic monitor
 → OOM Before/After
