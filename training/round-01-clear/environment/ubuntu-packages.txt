@@ -1,0 +1,6 @@
+# B1-2 — Ubuntu 24.04 mission-specific APT packages
+# Base packages (ca-certificates, curl, git) are managed by the Control Tower.
+procps
+psmisc
+lsof
+strace
